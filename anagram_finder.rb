@@ -48,7 +48,7 @@ end
 # @return [Array] an array of all the anagrams found in the original word list
 def process_list(word_list)
   word_set = {}
-  output = Array.new(word_list.count)
+  output = []
 
   word_list.each_with_index do |word, index|
     hash = hash_word(word)
@@ -59,7 +59,7 @@ def process_list(word_list)
       word_set[hash].each do |w|
         word, i = unwrap_word_and_index(w)
         # Place the word in it's original index/placement of the original string
-        output[i] = word
+        output.insert(i, word)
       end
     end
   end

@@ -3,7 +3,11 @@ word_list = %w(pool loco cool stain satin pretty nice loop)
 puts "=== Anagram Finder ==="
 puts "Original list: #{word_list.join(' ')}"
 
-def map_word(word)
+# Given a word, creates a hash given the characteristics of the letters in the word
+#
+# @param word [String] the word to hash
+# @return [String] the hash of the word
+def hash_word(word)
   letters = {}
   hash = ''
 
@@ -19,20 +23,43 @@ def map_word(word)
   hash
 end
 
+# Given a word and the index, combines the two into a string
+#
+# @param word [String] the word
+# @param index [String] the index of where the word appeared in the original string
+# @return [String] the combination of the word and the index, e.g. 'foo:5'
+def wrap_word_with_index(word, index)
+  "#{word}:#{index}"
+end
+
+# Given a wrapped word from wrap_word_with_index, unwrap the string into a word
+# and an index.
+#
+# @param word_index [String] the combined word and index in the format of "foo:5"
+# @return [Array] an array contining the word, then the index, in that order
+def unwrap_word_and_index(word_index)
+  match = /(\w+):(\d+)/.match(word_index)
+  [match[1], match[2].to_i]
+end
+
+# Processes a word list
+#
+# @param word_list [Array] an array of words to search for anagram-matches in
+# @return [Array] an array of all the anagrams found in the original word list
 def process_list(word_list)
-  map = {}
+  word_set = {}
   output = Array.new(word_list.count)
 
-  word_list.each_with_index do |word, i|
-    hash = map_word(word)
-    map[hash] ||= []
-    map[hash] << "#{word}::#{i}"
+  word_list.each_with_index do |word, index|
+    hash = hash_word(word)
+    word_set[hash] ||= []
+    word_set[hash] << wrap_word_with_index(word, index)
 
-    if map[hash].length >= 2
-      map[hash].each do |w|
-        w =~ /.*?::(\d+)/
-        index = $1.to_i
-        output[index] = w.gsub(/::\d+/,'')
+    if word_set[hash].length >= 2
+      word_set[hash].each do |w|
+        word, i = unwrap_word_and_index(w)
+        # Place the word in it's original index/placement of the original string
+        output[i] = word
       end
     end
   end

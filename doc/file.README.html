@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>
+  File: README
+  
+    &mdash; Documentation by YARD 0.8.7.6
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '';
+  framesUrl = "frames.html#!file.README.html";
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: README</span>
+  
+
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+      Class List
+    </a>
+  
+    <a class="full_list_link" id="method_list_link"
+        href="method_list.html">
+      Method List
+    </a>
+  
+    <a class="full_list_link" id="file_list_link"
+        href="file_list.html">
+      File List
+    </a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+
+    <iframe id="search_frame"></iframe>
+
+    <div id="content"><div id='filecontents'><h1>The Anagram Problem</h1>
+
+<p>Taken from <a href="http://nafiulis.me/the-deceptive-anagram-question.html">http://nafiulis.me/the-deceptive-anagram-question.html</a></p>
+
+<h2>Problem</h2>
+
+<blockquote>
+<p>Given a list of words L, find all the anagrams in L in the order in which they appear in L.</p>
+</blockquote>
+
+<h2>Example</h2>
+
+<p>The word list:</p>
+
+<blockquote>
+<p>[&quot;pool&quot;, &quot;loco&quot;, &quot;cool&quot;, &quot;stain&quot;, &quot;satin&quot;, &quot;pretty&quot;, &quot;nice&quot;, &quot;loop&quot;]</p>
+</blockquote>
+
+<p>The output should be, in <em>exactly</em> this order:</p>
+
+<blockquote>
+<p>[&quot;pool&quot;, &quot;loco&quot;, &quot;cool&quot;, &quot;stain&quot;, &quot;satin&quot;, &quot;loop&quot;]</p>
+</blockquote>
+
+<h2>Solution</h2>
+
+<p>I started reading the above post when I thought I should stop reading and try it
+myself. I too, started with a very naive approach that was looping over the list
+in exponential time. Gross.</p>
+
+<p>As I read more, he said the interviewer suggested getting it to O(N) time by using
+a hash map. I stopped reading once more, and went back to my half-baked problem.</p>
+
+<p>I came up with something that processes the output as it&#39;s reading words in. It&#39;s
+still rough, but it doesn&#39;t loop back over the list of words, which is nice.</p>
+
+<h3>Step 1: Read in the words, remembering their place in the original string</h3>
+
+<pre class='prettyprint'>
+def process_list(word_list)
+  word_list.each_with_index do |word, index|
+    # ... more to come ...
+  end
+end
+</pre>
+
+<h3>Step 2: Create a hash of the word that will map similar words to the same hash</h3>
+
+<p>I figured I&#39;d create a hash of a word that took each letter, and the count of each
+letter as it appeared in the word, the sort the letters and place the count next to it.</p>
+
+<p>Example: The word &quot;cool&quot; would become &quot;c1l1o2&quot; since &quot;c&quot; and &quot;l&quot; only appear once,
+and &quot;o&quot; appears twice. That would also map &quot;loco&quot; to the same hash. Nice.</p>
+
+<pre class='prettyprint'>
+def hash_word(word)
+  letters = {}
+  hash = ''
+
+  word.split('').each do |char|
+    letters[char] ||= 0
+    letters[char] += 1
+  end
+
+  letters.keys.sort.each do |key|
+    hash += "#{key}#{letters[key]}"
+  end
+
+  hash
+end
+</pre>
+
+<h3>Step 3: As each word is read in, create the hash, and store the word in the set of hashes.</h3>
+
+<pre class='prettyprint'>
+def process_list(word_list)
+  word_set = {}
+
+  word_list.each_with_index do |word, index|
+    hash = hash_word(word)
+    # Default the word_set for hash to an empty array
+    word_set[hash] ||= []
+
+    # Append the word, plus its place in the original string
+    word_set[hash] << "#{word}:#{index}"
+    # ... more to come ...
+  end
+end
+</pre>
+
+<p>As you can see, when I add the word to the hash map of words, I append it as
+the word, plus its original place in line. I&#39;ll use that later when constructing
+the output.</p>
+
+<h3>Step 4: Build the output string</h3>
+
+<pre class='prettyprint'>
+def wrap_word_with_index(word, index)
+  "#{word}:#{index}"
+end
+
+def unwrap_word_and_index(word_index)
+  match = /(\w+):(\d+)/.match(word_index)
+  [match[1], match[2].to_i]
+end
+
+def process_list(word_list)
+  word_set = {}
+  # Initialize an array the same size as the word_list, fill with nils
+  output = Array.new(word_list.count)
+
+  word_list.each_with_index do |word, index|
+    hash = map_word(word)
+    word_set[hash] ||= []
+    word_set[hash] << wrap_word_with_index(word, index)
+
+    # If there are at least 2 words in the set, we have something worth outputting
+    if word_set[hash].length >= 2
+      word_set[hash].each do |w|
+        word, i = unwrap_word_and_index(w)
+        # Place the word in it's original index/placement of the original string
+        output[i] = word
+      end
+    end
+  end
+  # Get rid of those pesky nils
+  output.compact
+end
+</pre>
+
+<h2>Does it work?</h2>
+
+<p>Yes, it does. It&#39;s still a hot mess. Problems I see are:</p>
+
+<ol>
+<li>It builds a secondary array of words, fills it with nils, then removes those nils. Wasteful. Over-allocating.</li>
+<li>My &quot;word:index&quot; <em>works</em>, but I&#39;m not in love with it. That value has to be stored <em>somewhere</em>, so alongside the word is probably fine, but, it feels messy.</li>
+</ol>
+
+<h2>Full code</h2>
+
+<pre class='prettyprint'>
+word_list = %w(pool loco cool stain satin pretty nice loop)
+
+puts "=== Anagram Finder ==="
+puts "Original list: #{word_list.join(' ')}"
+
+def hash_word(word)
+  letters = {}
+  hash = ''
+
+  word.split('').each do |char|
+    letters[char] ||= 0
+    letters[char] += 1
+  end
+
+  letters.keys.sort.each do |key|
+    hash += "#{key}#{letters[key]}"
+  end
+
+  hash
+end
+
+def wrap_word_with_index(word, index)
+  "#{word}:#{index}"
+end
+
+def unwrap_word_and_index(word_index)
+  match = /(\w+):(\d+)/.match(word_index)
+  [match[1], match[2].to_i]
+end
+
+def process_list(word_list)
+  word_set = {}
+  output = Array.new(word_list.count)
+
+  word_list.each_with_index do |word, index|
+    hash = hash_word(word)
+    word_set[hash] ||= []
+    word_set[hash] << wrap_word_with_index(word, index)
+
+    if word_set[hash].length >= 2
+      word_set[hash].each do |w|
+        word, i = unwrap_word_and_index(w)
+        # Place the word in it's original index/placement of the original string
+        output[i] = word
+      end
+    end
+  end
+  output.compact
+end
+
+puts "Processed list: #{process_list(word_list).join(' ')}"
+#=> Processed list: pool loco cool stain satin loop
+</pre>
+</div></div>
+
+    <div id="footer">
+  Generated on Thu Apr 16 11:04:25 2015 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.8.7.6 (ruby-2.0.0).
+</div>
+
+  </body>
+</html>

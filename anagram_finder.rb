@@ -6,40 +6,19 @@ puts "Original list: #{word_list.join(' ')}"
 # Given a word, creates a hash given the characteristics of the letters in the word
 #
 # @param word [String] the word to hash
-# @return [String] the hash of the word
+# @return [String] the letters of the word sorted alphabetically,
+#   "cool" becomes "cloo", "loco" also becomes "cloo"
 def hash_word(word)
-  letters = {}
-  hash = ''
-
-  word.split('').each do |char|
-    letters[char] ||= 0
-    letters[char] += 1
-  end
-
-  letters.keys.sort.each do |key|
-    hash += "#{key}#{letters[key]}"
-  end
-
-  hash
+  word.split('').sort
 end
 
 # Given a word and the index, combines the two into a string
 #
 # @param word [String] the word
 # @param index [String] the index of where the word appeared in the original string
-# @return [String] the combination of the word and the index, e.g. 'foo:5'
+# @return [Array] outputs the [word, index] as an array, in that order
 def wrap_word_with_index(word, index)
-  "#{word}:#{index}"
-end
-
-# Given a wrapped word from wrap_word_with_index, unwrap the string into a word
-# and an index.
-#
-# @param word_index [String] the combined word and index in the format of "foo:5"
-# @return [Array] an array contining the word, then the index, in that order
-def unwrap_word_and_index(word_index)
-  match = /(\w+):(\d+)/.match(word_index)
-  [match[1], match[2].to_i]
+  [word, index]
 end
 
 # Processes a word list
@@ -56,8 +35,8 @@ def process_list(word_list)
     word_set[hash] << wrap_word_with_index(word, index)
 
     if word_set[hash].length >= 2
-      word_set[hash].each do |w|
-        word, i = unwrap_word_and_index(w)
+      word_set[hash].each do |word_index|
+        word, i = word_index
         # Place the word in it's original index/placement of the original string
         output.insert(i, word)
       end

@@ -64,6 +64,11 @@ def hash_word(word)
 end
 </pre>
 
+_**Why did I choose this hash method?**_ It seemed right at the time and I originally
+thought it would save space. Upon reading more of the original blog post, Nafiul
+ends up creating a hash of a word by sorting the letters alphabetically, which
+is much faster/nicer. I'm keeping my hashing function as-is for full-disclosure.
+
 ### Step 3: As each word is read in, create the hash, and store the word in the set of hashes.
 
 <pre class='prettyprint'>
@@ -101,7 +106,7 @@ end
 def process_list(word_list)
   word_set = {}
   # Initialize an array the same size as the word_list, fill with nils
-  output = Array.new(word_list.count)
+  output = Array.new
 
   word_list.each_with_index do |word, index|
     hash = map_word(word)
@@ -113,7 +118,7 @@ def process_list(word_list)
       word_set[hash].each do |w|
         word, i = unwrap_word_and_index(w)
         # Place the word in it's original index/placement of the original string
-        output[i] = word
+        output.insert(i, word)
       end
     end
   end
@@ -126,8 +131,8 @@ end
 
 Yes, it does. It's still a hot mess. Problems I see are:
 
-1. It builds a secondary array of words, fills it with nils, then removes those nils. Wasteful. Over-allocating.
-2. My "word:index" *works*, but I'm not in love with it. That value has to be stored *somewhere*, so alongside the word is probably fine, but, it feels messy.
+1. My "word:index" *works*, but I'm not in love with it. That value has to be stored *somewhere*, so alongside the word is probably fine, but, it feels messy. I could just do an `.index_of` lookup on the original `word_list`, but that's technically a scan of the original word list, which would happen for every word I'm going to output.
+2. My hashing-function is a bit verbose/overkill when sorting the letters of a word would also work. I'm keeping the original here.
 
 ## Full code
 
@@ -164,7 +169,7 @@ end
 
 def process_list(word_list)
   word_set = {}
-  output = Array.new(word_list.count)
+  output = []
 
   word_list.each_with_index do |word, index|
     hash = hash_word(word)
@@ -175,7 +180,7 @@ def process_list(word_list)
       word_set[hash].each do |w|
         word, i = unwrap_word_and_index(w)
         # Place the word in it's original index/placement of the original string
-        output[i] = word
+        output.insert(i, word)
       end
     end
   end
@@ -185,3 +190,80 @@ end
 puts "Processed list: #{process_list(word_list).join(' ')}"
 #=> Processed list: pool loco cool stain satin loop
 </pre>
+
+## How about a refactor?
+Knowing what I know now, and seeing the problems, let's do some refactoring.
+
+### Hashing function
+Let's first simplify the function to do a letter-sort. It now becomes much shorter:
+
+<pre class='prettyprint'>
+def hash_word(word)
+  word.split('').sort
+end
+</pre>
+
+Wow, I'm embarrassed.
+
+### Wrap/Unwrap functions
+Why didn't I just use a hash, or an array?
+
+<pre class='prettyprint'>
+# No need for an unwrap function now, this is simple.
+# Heck, even this function seems overkill, now.
+def wrap_word_with_index(word, index)
+  [word, index]
+end
+# ... snip ...
+if word_set[hash].length >= 2
+  word_set[hash].each do |word_index|
+    word, i = word_index # it's in the format I need already! how quaint
+    # Place the word in it's original index/placement of the original string
+    output.insert(i, word)
+  end
+end
+</pre>
+
+`embarassment++`
+
+## Refactored full code
+
+Now that the code is cleaner/leaner, here's the full dump:
+
+<pre class='prettyprint'>
+word_list = %w(pool loco cool stain satin pretty nice loop)
+
+puts "=== Anagram Finder ==="
+puts "Original list: #{word_list.join(' ')}"
+
+def hash_word(word)
+  word.split('').sort
+end
+
+def wrap_word_with_index(word, index)
+  [word, index]
+end
+
+def process_list(word_list)
+  word_set = {}
+  output = []
+
+  word_list.each_with_index do |word, index|
+    hash = hash_word(word)
+    word_set[hash] ||= []
+    word_set[hash] << wrap_word_with_index(word, index)
+
+    if word_set[hash].length >= 2
+      word_set[hash].each do |word_index|
+        word, i = word_index
+        output.insert(i, word)
+      end
+    end
+  end
+  output.compact
+end
+
+puts "Processed list: #{process_list(word_list).join(' ')}"
+</pre>
+
+Yeesh, that looks a lot better. Live, code and learn.
